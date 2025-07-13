@@ -81,6 +81,7 @@ class Spool(Base):
         cascade="save-update, merge, delete, delete-orphan",
         lazy="joined",
     )
+    adjustments: Mapped[list["SpoolAdjustment"]] = relationship(back_populates="spool")
 
 
 class Setting(Base):
@@ -116,3 +117,15 @@ class SpoolField(Base):
     spool: Mapped["Spool"] = relationship(back_populates="extra")
     key: Mapped[str] = mapped_column(String(64), primary_key=True, index=True)
     value: Mapped[str] = mapped_column(Text())
+
+
+class SpoolAdjustment(Base):
+    __tablename__ = "spool_adjustment"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    spool_id: Mapped[int] = mapped_column(ForeignKey("spool.id"), nullable=False)
+    adjustment_amount: Mapped[float] = mapped_column(nullable=False)
+    adjustment_length: Mapped[Optional[float]] = mapped_column(nullable=True)  # New field for length
+    reason: Mapped[Optional[str]] = mapped_column(String(256))
+    timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    spool: Mapped["Spool"] = relationship("Spool", back_populates="adjustments")

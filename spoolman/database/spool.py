@@ -14,6 +14,7 @@ from sqlalchemy.sql.functions import coalesce
 
 from spoolman.api.v1.models import EventType, Spool, SpoolEvent
 from spoolman.database import filament, models
+from spoolman.database.spool_adjustment import record_spool_adjustment
 from spoolman.database.utils import (
     SortOrder,
     add_where_clause_int,
@@ -300,6 +301,8 @@ async def use_weight(db: AsyncSession, spool_id: int, weight: float) -> models.S
 
     await db.commit()
     await spool_changed(spool, EventType.UPDATED)
+    # Record adjustment
+    await record_spool_adjustment(db, spool_id, weight, reason="consumed by weight", adjustment_length=None)
     return spool
 
 
@@ -346,6 +349,8 @@ async def use_length(db: AsyncSession, spool_id: int, length: float) -> models.S
 
     await db.commit()
     await spool_changed(spool, EventType.UPDATED)
+    # Record adjustment
+    await record_spool_adjustment(db, spool_id, weight, reason=f"consumed by length: {length}mm", adjustment_length=length)
     return spool
 
 
@@ -475,3 +480,23 @@ async def rename_location(
     await db.execute(
         sqlalchemy.update(models.Spool).where(models.Spool.location == current_name).values(location=new_name),
     )
+
+
+async def adjust_spool_filament(
+    db: AsyncSession,
+    spool_id: int,
+    adjustment_amount: float,
+    reason: Optional[str] = None,
+):
+    """Adjust spool filament and record the adjustment."""
+    # Here you would update the spool's weight or other relevant field
+    # For example:
+    spool = await get_by_id(db, spool_id)
+    if spool is None:
+        raise ItemNotFoundError(f"Spool {spool_id} not found")
+    spool.used_weight += adjustment_amount
+    await db.commit()
+    await db.refresh(spool)
+    # Record the adjustment
+    await record_spool_adjustment(db, spool_id, adjustment_amount, reason)
+    return spool
