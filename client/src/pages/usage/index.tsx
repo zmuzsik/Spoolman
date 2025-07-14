@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Table, Typography } from "antd";
+import { useNavigate } from "react-router-dom";
 import { getAPIURL } from "../../utils/url";
 
 interface FilamentUsage {
@@ -26,6 +27,7 @@ const columns = [
 export default function UsageHistoryPage() {
   const [data, setData] = useState<FilamentUsage[]>([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);

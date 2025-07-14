@@ -4,9 +4,11 @@ import {
 } from "@refinedev/antd";
 import { IResourceComponentsProps, useTranslate } from "@refinedev/core";
 import { Table } from "antd";
+import { ColumnType } from "antd/es/table";
 import { useMemo, useState } from "react";
 import { SortedColumn, SpoolIconColumn, NumberColumn, DateColumn } from "../../components/column";
 import { useCurrencyFormatter } from "../../utils/settings";
+import { useNavigate } from "react-router-dom";
 
 interface IFilamentUsage {
     id: number;
@@ -51,6 +53,7 @@ const defaultColumns = allColumns;
 export const UsageList: React.FC<IResourceComponentsProps> = () => {
     const t = useTranslate();
     const currencyFormatter = useCurrencyFormatter();
+    const navigate = useNavigate();
 
     const { tableProps } = useTable<IFilamentUsage>({
         syncWithLocation: false,
@@ -75,11 +78,49 @@ export const UsageList: React.FC<IResourceComponentsProps> = () => {
         [tableProps.dataSource]
     );
 
+    // Use a proper TableState object for columns
+    const tableState = {
+        sorters: [],
+        filters: [],
+        pagination: { current: 1, pageSize: 20 },
+        showColumns,
+    };
     const commonProps = {
         t,
         dataSource,
-        tableState: {},
+        tableState,
         sorter: true,
+        navigate,
+    };
+
+    // Mock UseQueryResult for filterValueQuery
+    const mockFilterValueQuery = {
+        data: [],
+        isLoading: false as false,
+        refetch: async () => Promise.resolve({} as any),
+        error: null,
+        isError: false as false,
+        isLoadingError: false as false,
+        isRefetchError: false as false,
+        isSuccess: true as true,
+        isIdle: false,
+        status: "success" as "success",
+        failureCount: 0,
+        isFetched: true,
+        isFetching: false,
+        isStale: false,
+        isPlaceholderData: false,
+        isPreviousData: false,
+        isRefetching: false,
+        dataUpdatedAt: Date.now(),
+        errorUpdatedAt: Date.now(),
+        remove: () => {},
+        fetchStatus: "idle" as "idle",
+        failureReason: null,
+        errorUpdateCount: 0,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPaused: false,
     };
 
     return (
@@ -110,6 +151,7 @@ export const UsageList: React.FC<IResourceComponentsProps> = () => {
                                   }
                                 : record.filament?.color_hex,
                         dataId: "filament_name",
+                        filterValueQuery: mockFilterValueQuery,
                     }),
                     SortedColumn({
                         ...commonProps,
@@ -139,7 +181,8 @@ export const UsageList: React.FC<IResourceComponentsProps> = () => {
                         id: "cost",
                         i18ncat: "usage",
                         align: "right",
-                        render: (_, obj: IFilamentUsage) =>
+                        unit: "",
+                        render: (_: any, obj: IFilamentUsage) =>
                             obj.cost !== undefined ? currencyFormatter.format(obj.cost) : "-",
                         width: 110,
                     }),
@@ -148,7 +191,7 @@ export const UsageList: React.FC<IResourceComponentsProps> = () => {
                         id: "date",
                         i18ncat: "usage",
                     }),
-                ].filter((col) => showColumns.includes(col.key))}
+                ].filter((col): col is ColumnType<IFilamentUsage> => !!col && typeof col.key === "string" && showColumns.includes(col.key as string))}
             />
         </List>
     );
