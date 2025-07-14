@@ -13,6 +13,7 @@ import {
   TableOutlined,
   ToolOutlined,
   UserOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
 import loadable from "@loadable/component";
 import routerBindings, { DocumentTitleHandler, UnsavedChangesNotifier } from "@refinedev/react-router";
@@ -173,6 +174,14 @@ function App() {
                     icon: <QuestionOutlined />,
                   },
                 },
+                {
+                  name: "usage",
+                  list: "/usage",
+                  meta: {
+                    canDelete: false,
+                    icon: <BarChartOutlined />,
+                  },
+                },
               ]}
               options={{
                 syncWithLocation: true,
@@ -232,6 +241,7 @@ function App() {
                   <Route path="/settings/*" element={<LoadablePage name="settings" />} />
                   <Route path="/help" element={<LoadablePage name="help" />} />
                   <Route path="/locations" element={<LoadablePage name="locations" />} />
+                  <Route path="/usage" element={<LoadablePage name="usage" />} />
                   <Route path="*" element={<ErrorComponent />} />
                 </Route>
               </Routes>

@@ -427,3 +427,34 @@ class SettingEvent(Event):
 
     payload: SettingKV = Field(description="Updated setting.")
     resource: Literal["setting"] = Field(description="Resource type.")
+
+
+class FilamentUsage(BaseModel):
+    id: int = Field(description="Unique adjustment record ID.")
+    spool_id: int = Field(description="Spool ID.")
+    filament_name: Optional[str] = Field(description="Filament name.")
+    material: Optional[str] = Field(description="Material type.")
+    date: SpoolmanDateTime = Field(description="Date and time of usage.")
+    used_weight: float = Field(description="Amount used in grams.")
+    used_length: Optional[float] = Field(description="Amount used in mm.")
+    cost: Optional[float] = Field(description="Cost of usage.")
+
+    @staticmethod
+    def from_db(adjustment: models.SpoolAdjustment) -> "FilamentUsage":
+        spool = adjustment.spool
+        filament = spool.filament if spool else None
+        price = spool.price if spool and spool.price is not None else (filament.price if filament and filament.price is not None else 0)
+        total_weight = spool.initial_weight if spool and spool.initial_weight else (filament.weight if filament and filament.weight else 0)
+        cost = None
+        if price and total_weight:
+            cost = price * (adjustment.adjustment_amount / total_weight)
+        return FilamentUsage(
+            id=adjustment.id,
+            spool_id=adjustment.spool_id,
+            filament_name=filament.name if filament else None,
+            material=filament.material if filament else None,
+            date=adjustment.timestamp,
+            used_weight=adjustment.adjustment_amount,
+            used_length=adjustment.adjustment_length,
+            cost=cost,
+        )
